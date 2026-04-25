@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, UseInterceptors, UploadedFile, UseGuards, Req } from '@nestjs/common';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -20,7 +20,7 @@ export class ArticleController {
     constructor(private readonly articleService: ArticleService) { }
 
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN)
+    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
     @ApiOkResponse()
     @ApiBody({ type: CreateArticleFileDto })
     @HttpCode(201)
@@ -38,8 +38,8 @@ export class ArticleController {
             })
         })
     )
-    create(@Body() createArticleDto: CreateArticleDto, @UploadedFile() file: Express.Multer.File) {
-        return this.articleService.create(createArticleDto, file);
+    create(@Body() createArticleDto: CreateArticleDto, @UploadedFile() file: Express.Multer.File, @Req() req) {
+        return this.articleService.create(createArticleDto, file, req.user.id);
     }
 
     @ApiOkResponse({
@@ -60,7 +60,7 @@ export class ArticleController {
     }
 
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN)
+    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
     @ApiOkResponse({ description: "Updated" })
     @ApiNotFoundResponse({ description: "Article not found" })
     @HttpCode(200)
@@ -70,7 +70,7 @@ export class ArticleController {
     }
 
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN)
+    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
     @ApiOkResponse({ description: "Deleted" })
     @ApiNotFoundResponse({ description: "Article not found" })
     @HttpCode(200)

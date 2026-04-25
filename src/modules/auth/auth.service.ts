@@ -68,7 +68,7 @@ export class AuthService {
 
     await this.authRepo.update(foundeduser.id, { otp: "", otpTime: 0 })
 
-    const payload = { username: foundeduser.username, role: foundeduser.role };
+    const payload = { id: foundeduser.id, username: foundeduser.username, role: foundeduser.role };
     return {
       access_token: await this.jwtService.signAsync(payload)
     };
