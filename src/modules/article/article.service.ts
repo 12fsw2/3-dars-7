@@ -5,6 +5,7 @@ import { Article } from './entities/article.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Tag } from '../tag/entities/tag.entity';
+import { QueryDto } from './dto/query.dto';
 
 @Injectable()
 export class ArticleService {
@@ -18,23 +19,48 @@ export class ArticleService {
 
         if (!foundedTags) throw new BadRequestException()
         const article = await this.articleRepo.create({
-        ...createArticleDto,
-        author: userId,
-        tags: foundedTags
+            ...createArticleDto,
+            author: userId,
+            tags: foundedTags
         })
 
         article.backgroundImage = `http://localhost:4001/uploads/${file.filename}`
         return await this.articleRepo.save(article)
     }
 
-    async findAll(): Promise<Article[]> {
-        return await this.articleRepo.find()
+    async findAll(queryDto: QueryDto) {
+        const { page = 1, limit = 10, search } = queryDto
+
+        const queryBuilder = this.articleRepo.createQueryBuilder("article")
+            .leftJoinAndSelect("article.tags", "tags")
+            .where("article.deletedAt is null")
+
+        if (search) {
+            queryBuilder.andWhere(
+                "article.title ILIKE :search or article.content ILIKE :search or tags.name ILIKE :search",
+                { search: `%${search}%` })
+        }
+
+        const result = await queryBuilder
+            .orderBy("article.createdAt", "DESC")
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getMany()
+
+        const total = await queryBuilder.getCount()
+
+        return {
+            totalPage: Math.ceil(total / limit),
+            prev: page > 1 ? { page: page - 1, limit } : undefined,
+            next: page * limit < total ? { page: page + 1, limit } : undefined,
+            result
+        }
     }
 
     async findOne(id: number): Promise<Article> {
-        const foundedArticle = await this.articleRepo.findOne({ 
-            where: { id }, 
-            relations: ["author", "tags"]
+        const foundedArticle = await this.articleRepo.findOne({
+            where: { id },
+            relations: ["author", "tags", "images"]
         })
 
         if (!foundedArticle) throw new NotFoundException("Artivle not found")
@@ -45,7 +71,7 @@ export class ArticleService {
     async update(
         id: number,
         updateArticleDto: UpdateArticleDto,
-    ) : Promise<{ message: "Updated" }> {
+    ): Promise<{ message: "Updated" }> {
         const article = await this.articleRepo.findOne({
             where: { id },
             relations: ["tags"],

@@ -5,8 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Auth } from './modules/auth/entities/auth.entity';
 import { ArticleModule } from './modules/article/article.module';
 import { Article } from './modules/article/entities/article.entity';
-import { APP_GUARD } from '@nestjs/core';
-import { RolesGuard } from './common/guards/roles.guard';
+import { Tag } from './modules/tag/entities/tag.entity';
+import { TagModule } from './modules/tag/tag.module';
+import { ArticleImageModule } from './modules/article_image/article_image.module';
+import { ArticleImage } from './modules/article_image/entities/article_image.entity';
 
 @Module({
   imports: [
@@ -18,12 +20,14 @@ import { RolesGuard } from './common/guards/roles.guard';
       username: "postgres",
       database: String(process.env.DB_NAME as string),
       password: String(process.env.DB_PASSWORD as string),
-      entities: [Auth, Article],
+      entities: [Auth, Article, Tag, ArticleImage],
       synchronize: true,
       logging: false
     }),
     AuthModule,
-    ArticleModule
+    ArticleModule,
+    TagModule,
+    ArticleImageModule
   ],
   controllers: [],
   providers: [],
